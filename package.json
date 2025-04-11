@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "add-vehicle": "ts-node --project tsconfig.json scripts/add-vehicle.ts"
+    "lint": "next lint"
   },
   "dependencies": {
     "mongoose": "^8.12.1",
