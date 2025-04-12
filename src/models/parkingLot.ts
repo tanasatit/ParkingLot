@@ -4,9 +4,14 @@ import { Vehicle } from './Vehicle';
 
 export class ParkingLot {
   private levels: ParkingLevel[];
+  private static readonly NUM_LEVELS = 5;
+  private static readonly SPOTS_PER_LEVEL = 50;
 
-  constructor(levels: ParkingLevel[]) {
-    this.levels = levels;
+  constructor() {
+    this.levels = [];
+    for (let i=0; i<ParkingLot.NUM_LEVELS; i++){
+      this.levels.push(new ParkingLevel(i, ParkingLot.SPOTS_PER_LEVEL));
+    }
   }
 
   parkVehicle(vehicle: Vehicle): boolean {

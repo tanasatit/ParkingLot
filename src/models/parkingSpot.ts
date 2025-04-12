@@ -3,12 +3,20 @@ import { VehicleSize } from './enums/VehicleSize';
 import { Vehicle } from './Vehicle';
 
 export class ParkingSpot {
+  public readonly levelNumber: number;
+  public readonly spotNumber: number;
+  public state: boolean = false;
+
   constructor(
     public readonly id: string,
     public readonly size: VehicleSize,
-    private vehicle: Vehicle | null = null,
-    private state: boolean = false
-  ) {}
+    levelNumber: number,
+    spotNumber: number,
+    private vehicle: Vehicle | null = null
+  ) {
+    this.levelNumber = levelNumber;
+    this.spotNumber = spotNumber;
+  }
 
   isAvailable(): boolean {
     return this.vehicle === null;
