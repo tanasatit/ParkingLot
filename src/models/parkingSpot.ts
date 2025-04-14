@@ -1,48 +1,43 @@
 // ParkingSpot.ts
-import { VehicleSize } from './enums/VehicleSize';
-import { Vehicle } from './Vehicle';
+import mongoose from "mongoose";
+import { VehicleSize } from "./VehicleSize";
 
-export class ParkingSpot {
-  public readonly levelNumber: number;
-  public readonly spotNumber: number;
-  public state: boolean = false;
+// Schema
+const parkingSpotSchema = new mongoose.Schema({
+    levelNumber: { type: Number, required: true },
+    spotNumber: { type: Number, required: true },
+    spotId: { type: String, required: true , unique: true },
+    size: { type: String, enum: Object.values(VehicleSize), required: true },
+    vehicle: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", default: null },
+    isOccupied: { type: Boolean, default: false},
+  });
 
-  constructor(
-    public readonly id: string,
-    public readonly size: VehicleSize,
-    levelNumber: number,
-    spotNumber: number,
-    private vehicle: Vehicle | null = null
-  ) {
-    this.levelNumber = levelNumber;
-    this.spotNumber = spotNumber;
+// Instance method: isAvailable
+parkingSpotSchema.methods.isAvailable = function (): boolean {
+  return this.vehicle === null;
+};
+
+// Instance method: canFitVehicle
+parkingSpotSchema.methods.canFitVehicle = function (vehicle: typeof mongoose.Document & { getVehicleSize(): VehicleSize; canFitInSpot(spot: any): boolean }): boolean {
+  return this.isAvailable() && vehicle.canFitInSpot(this);
+};
+
+// Instance method: park
+parkingSpotSchema.methods.parkInSpot = async function (vehicle: mongoose.Document & { getVehicleSize(): VehicleSize }): Promise<boolean> {
+  if (this.canFitVehicle(vehicle)) {
+    this.vehicle = vehicle._id;
+    await this.save();
+    return true;
   }
+  return false;
+};
 
-  isAvailable(): boolean {
-    return this.vehicle === null;
-  }
-
-  canFitVehicle(vehicle: Vehicle): boolean {
-    return this.isAvailable() && vehicle.getVehicleSize() <= this.size;
-  }
-
-  park(vehicle: Vehicle): boolean {
-    if (this.canFitVehicle(vehicle)) {
-      this.vehicle = vehicle;
-      return true;
-    }
-    return false;
-  }
-
-  removeVehicle(): void {
+// Instance method: removeVehicle
+parkingSpotSchema.methods.removeVehicle = async function (): Promise<void> {
     this.vehicle = null;
-  }
+    this.isOccupied = false;
+    await this.save();
+  };
 
-  getOccupiedVehicle(): Vehicle | null {
-    return this.vehicle;
-  }
-
-  getId(): string {
-    return this.id;
-  }
-}
+// Model export
+export const ParkingSpot = mongoose.models.ParkingSpot || mongoose.model("ParkingSpot", parkingSpotSchema);

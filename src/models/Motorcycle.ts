@@ -1,9 +1,11 @@
-// Motorcycle.ts
-import { Vehicle } from './Vehicle';
-import { VehicleSize } from './enums/VehicleSize';
+import mongoose from "mongoose";
+import { Vehicle } from "./Vehicle";
+import { VehicleSize } from "./VehicleSize";
 
-export class Motorcycle extends Vehicle {
-  getVehicleSize(): VehicleSize {
-    return VehicleSize.SMALL;
-  }
-}
+const MotorcycleSchema = new mongoose.Schema({});
+
+MotorcycleSchema.methods.canFitInSpot = function (spot: any): boolean {
+  return true; 
+};
+
+export const Motorcycle = mongoose.models.Motorcycle || Vehicle.discriminator("Motorcycle", MotorcycleSchema);

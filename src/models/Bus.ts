@@ -1,9 +1,11 @@
-// Bus.ts
-import { Vehicle } from './Vehicle';
-import { VehicleSize } from './enums/VehicleSize';
+import mongoose from "mongoose";
+import { Vehicle } from "./Vehicle";
+import { VehicleSize } from "./VehicleSize";
 
-export class Bus extends Vehicle {
-  getVehicleSize(): VehicleSize {
-    return VehicleSize.EXTRA_LARGE;
-  }
-}
+const busSchema = new mongoose.Schema({});
+
+busSchema.methods.canFitInSpot = function (spot: any): boolean {
+  return spot.size === VehicleSize.LARGE;
+};
+
+export const Bus = mongoose.models.Bus || Vehicle.discriminator("Bus", busSchema);

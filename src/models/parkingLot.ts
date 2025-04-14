@@ -1,50 +1,52 @@
-// ParkingLot.ts
-import { ParkingLevel } from './ParkingLevel';
-import { Vehicle } from './Vehicle';
+import mongoose from "mongoose";
+import { Vehicle } from "./Vehicle";
 
-export class ParkingLot {
-  private levels: ParkingLevel[];
-  private static readonly NUM_LEVELS = 5;
-  private static readonly SPOTS_PER_LEVEL = 50;
+const parkingLotSchema = new mongoose.Schema({
+  levels: [{ type: mongoose.Schema.Types.ObjectId, ref: "Level" }],
+  totalLevels: { type: Number, required: true },
+});
 
-  constructor() {
-    this.levels = [];
-    for (let i=0; i<ParkingLot.NUM_LEVELS; i++){
-      this.levels.push(new ParkingLevel(i, ParkingLot.SPOTS_PER_LEVEL));
+// Instance Method: Park a vehicle
+parkingLotSchema.methods.parkVehicle = async function (vehicle: typeof Vehicle) {
+  for (const levelId of this.levels) {
+    const level = await mongoose.model("Level").findById(levelId);
+    if (level && await level.parkVehicle(vehicle)) {
+      return true;
     }
   }
+  return false;
+};
 
-  parkVehicle(vehicle: Vehicle): boolean {
-    for (const level of this.levels) {
-      if (level.parkVehicle(vehicle)) {
-        return true;
-      }
+// Define static methods
+const statics = {
+  getInstance: async function(this: any) {
+    let lot = await this.findOne();
+    if (!lot) {
+      lot = await this.createParkingLot();
     }
-    return false; // Could not park anywhere
-  }
+    return lot;
+  },
+  createParkingLot: async function(this: any) {
+    const NUM_LEVELS = 5;
+    const SPOTS_PER_LEVEL = 100;
+    const levelIds = [];
 
-  removeVehicle(vehicle: Vehicle): boolean {
-    for (const level of this.levels) {
-      if (level.removeVehicle(vehicle)) {
-        return true;
-      }
+    for (let i = 0; i < NUM_LEVELS; i++) {
+      const level = await (mongoose.model("Level") as any).createLevel(i, SPOTS_PER_LEVEL);
+      levelIds.push(level._id);
     }
-    return false;
-  }
 
-  // Helper function to remove a vehicle by license plate
-  removeVehicleByLicensePlate(licensePlate: string): boolean {
-    for (const level of this.levels) {
-      const vehicle = level.removeVehicleByLicensePlate(licensePlate);
-      if (vehicle) return true;
-    }
-    return false; // Vehicle not found
-  }
+    const parkingLot = new this({
+      levels: levelIds,
+      totalLevels: NUM_LEVELS,
+    });
 
-  getTotalAvailableSpots(): number {
-    return this.levels.reduce(
-      (total, level) => total + level.getAvailableSpots(),
-      0
-    );
+    await parkingLot.save();
+    console.log("Parking lot created successfully!");
+    return parkingLot;
   }
-}
+};
+
+Object.assign(parkingLotSchema.statics, statics);
+
+export const ParkingLot = (mongoose.models.ParkingLot || mongoose.model("ParkingLot", parkingLotSchema)) as any;

@@ -1,101 +1,99 @@
-import React, { useState } from 'react';
-import { ParkingLot } from '../models/ParkingLot';
-import { Car } from '../models/Car';
-import { VehicleSize } from '../models/enums/VehicleSize';
+import { useState } from 'react';
+import { useRouter } from 'next/router';
+import Layout from '../components/layout';
 
-const lot = new ParkingLot();
+type VehicleType = 'Car' | 'Motorcycle' | 'Bus';
 
-const App = () => {
-  const [selectedLevel, setSelectedLevel] = useState(0);
-  const [_, forceRerender] = useState(false);
+export default function AddVehiclePage() {
+  const router = useRouter();
+  const [plate, setPlate] = useState('');
+  const [type, setType] = useState<VehicleType>('Car');
+  const [error, setError] = useState<string | null>(null);
 
-  const level = (lot as any).levels[selectedLevel];
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-  const handlePark = (spot: any) => {
-    const vehicle = new Car('CAR001'); // Replace with your vehicle logic
-    const success = spot.park(vehicle);
-    if (success) {
-      forceRerender(v => !v);
+    try {
+      const response = await fetch('/api/addVehicle', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          licensePlate: plate,
+          vehicleType: type,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add vehicle');
+      }
+
+      console.log('Vehicle added:', data);
+      router.push('/parkinglot');
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+      setError(error instanceof Error ? error.message : 'Failed to add vehicle');
     }
-  };
-
-  // Group spots by size
-  const groupedSpots: Record<string, any[]> = {
-    SMALL: [],
-    MEDIUM: [],
-    LARGE: [],
-    EXTRALARGE: [],
-  };
-
-  (level as any).spots.forEach((spot: any) => {
-    const sizeKey = typeof spot.size === 'number'
-  ? VehicleSize[spot.size as keyof typeof VehicleSize]
-  : spot.size;
-
-  
-    if (!groupedSpots[sizeKey]) {
-      groupedSpots[sizeKey] = [];
-    }
-  
-    groupedSpots[sizeKey].push(spot);
-  });
-  
-
-  const sizeLabels: Record<string, string> = {
-    SMALL: '🟦 Small Spots',
-    MEDIUM: '🟩 Medium Spots',
-    LARGE: '🟧 Large Spots',
-    EXTRALARGE: '🟥 Extra Large Spots',
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <h1>🚗 Parking Lot</h1>
-
-      <label htmlFor="level">Choose Level: </label>
-      <select
-        id="level"
-        value={selectedLevel}
-        onChange={(e) => setSelectedLevel(Number(e.target.value))}
-      >
-        {[...Array(5)].map((_, i) => (
-          <option key={i} value={i}>Level {i}</option>
-        ))}
-      </select>
-
-      <div style={{ marginTop: '20px' }}>
-        <h2>Level {selectedLevel}</h2>
-
-        {Object.keys(groupedSpots).map((size) => (
-          <div key={size} style={{ marginBottom: '30px' }}>
-            <h3>{sizeLabels[size]}</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              {groupedSpots[size].map((spot, i) => (
-                <div
-                  key={i}
-                  onClick={() => {
-                    if (spot.isAvailable()) handlePark(spot);
-                  }}
-                  style={{
-                    cursor: spot.isAvailable() ? 'pointer' : 'not-allowed',
-                    border: '1px solid #ccc',
-                    borderRadius: '8px',
-                    padding: '10px',
-                    textAlign: 'center',
-                    width: '100px',
-                    backgroundColor: spot.isAvailable() ? '#d4fcd4' : '#fcd4d4',
-                  }}
-                >
-                  <strong>{spot.getId()}</strong><br />
-                  {spot.isAvailable() ? '🟢 Available' : '🔴 Occupied'}
-                </div>
-              ))}
-            </div>
+    <Layout>
+      <div style={{ padding: '20px' }}>
+        <h1>Add Vehicle</h1>
+        {error && (
+          <div style={{ color: 'red', marginBottom: '10px' }}>
+            {error}
           </div>
-        ))}
+        )}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '20px' }}>
+            <input
+              type="text"
+              placeholder="License Plate"
+              value={plate}
+              onChange={(e) => setPlate(e.target.value)}
+              style={{ 
+                marginRight: '10px', 
+                padding: '8px',
+                width: '200px',
+                borderRadius: '4px',
+                border: '1px solid #ccc'
+              }}
+              required
+            />
+            <select 
+              value={type} 
+              onChange={(e) => setType(e.target.value as VehicleType)}
+              style={{ 
+                padding: '8px',
+                borderRadius: '4px',
+                border: '1px solid #ccc'
+              }}
+            >
+              <option value="Car">Car</option>
+              <option value="Motorcycle">Motorcycle</option>
+              <option value="Bus">Bus</option>
+            </select>
+          </div>
+          <button 
+            type="submit"
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Add Vehicle
+          </button>
+        </form>
       </div>
-    </div>
+    </Layout>
   );
-};
-
-export default App;
+}
