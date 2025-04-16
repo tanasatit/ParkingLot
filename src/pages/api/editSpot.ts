@@ -83,10 +83,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           vehicleSize = VehicleSize.LARGE;
         }
 
-        // Update vehicle size to enum value
-        vehicle.vehicleSize = vehicleSize;
-        await vehicle.save();
-
         // Check if vehicle can fit in the spot
         if (spot.size === VehicleSize.SMALL && vehicleSize !== VehicleSize.SMALL) {
           return res.status(400).json({ error: 'Vehicle cannot fit in this spot' });

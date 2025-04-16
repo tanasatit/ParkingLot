@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           }
         });
         
+        
         if (!lot) {
           return res.status(404).json({ error: 'No parking lot found' });
         }
